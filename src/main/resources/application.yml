@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: purchase.analytics.api
+
+  # Security Configuration
+  security:
+    user:
+      name: ${SECURITY_USER_NAME:superadmin}
+      password: ${SECURITY_USER_PASSWORD:superpassword}
+      roles: ${SECURITY_USER_ROLE:ADMIN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics # show only the necessary
+      base-path: /actuator
+  endpoint:
+    health:
+      probes:
+        enabled: true       # liveness/readiness
+      show-details: never   # don't show details by default
+
+external:
+  base:
+    url:
+      vercel: https://rgr3viiqdl8sikgv.public.blob.vercel-storage.com
