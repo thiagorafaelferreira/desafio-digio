@@ -13,7 +13,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics # show only the necessary
+        include: health,info,metrics,caches # show cache statistics
       base-path: /actuator
   endpoint:
     health:
