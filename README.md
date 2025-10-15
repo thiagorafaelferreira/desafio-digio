@@ -231,3 +231,19 @@ Para executar os testes:
 ./mvnw test
 ```
 
+## Possiveis melhorias
+
+Sprint 1 (1 semana):
+1. Implementar Cache (2 dias)
+2. Refatorar código duplicado (2 dias)
+3. Adicionar validação de dados (1 dia)
+
+Sprint 2 (1 semana):
+4. Implementar Circuit Breaker (3 dias)
+5. Adicionar paginação (2 dias)
+
+Sprint 3 (1 semana):
+6. Implementar métricas (3 dias)
+7. Melhorar logging (2 dias)
+
+
