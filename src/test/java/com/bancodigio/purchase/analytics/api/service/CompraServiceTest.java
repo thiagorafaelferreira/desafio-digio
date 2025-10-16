@@ -6,6 +6,7 @@ import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
 import com.bancodigio.purchase.analytics.api.dto.Produto;
 import com.bancodigio.purchase.analytics.api.exception.CompraNotFoundException;
 import com.bancodigio.purchase.analytics.api.gateway.VercelGateway;
+import com.bancodigio.purchase.analytics.api.mapper.CompraMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +32,9 @@ class CompraServiceTest {
 
     @Mock
     private VercelGateway vercelGateway;
+
+    @Mock
+    private CompraMapper compraMapper;
 
     @InjectMocks
     private CompraService compraService;
@@ -52,6 +59,37 @@ class CompraServiceTest {
                         new CompraItem("1003", 1)  // 120.00
                 ))
         );
+
+        // Mock CompraMapper to return CompraResponse based on input (lenient for tests without clientes)
+        lenient().when(compraMapper.buildCompraResponse(any(Cliente.class), any(CompraItem.class), anyMap()))
+                .thenAnswer(invocation -> {
+                    Cliente cliente = invocation.getArgument(0);
+                    CompraItem item = invocation.getArgument(1);
+                    var produtosMap = (java.util.Map<Integer, Produto>) invocation.getArgument(2);
+
+                    try {
+                        Integer codigoProduto = Integer.parseInt(item.codigo());
+                        Produto produto = produtosMap.get(codigoProduto);
+                        if (produto == null) {
+                            return null;
+                        }
+
+                        BigDecimal valorTotal = produto.preco().multiply(BigDecimal.valueOf(item.quantidade()));
+                        return new CompraResponse(
+                                cliente.nome(),
+                                cliente.cpf(),
+                                produto.codigo(),
+                                produto.tipoVinho(),
+                                produto.safra(),
+                                produto.anoCompra(),
+                                produto.preco(),
+                                item.quantidade(),
+                                valorTotal
+                        );
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                });
     }
 
     @Test

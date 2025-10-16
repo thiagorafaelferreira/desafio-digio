@@ -1,17 +1,15 @@
 package com.bancodigio.purchase.analytics.api.service;
 
-import com.bancodigio.purchase.analytics.api.dto.Cliente;
-import com.bancodigio.purchase.analytics.api.dto.CompraItem;
 import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
 import com.bancodigio.purchase.analytics.api.dto.Produto;
 import com.bancodigio.purchase.analytics.api.dto.RecomendacaoClienteResponse;
 import com.bancodigio.purchase.analytics.api.dto.TipoQuantidade;
 import com.bancodigio.purchase.analytics.api.gateway.VercelGateway;
+import com.bancodigio.purchase.analytics.api.mapper.CompraMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +20,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.isNull;
-
 /**
  * RecomendacaoService
  * Lida com analise de recomendacao
@@ -32,11 +28,13 @@ import static java.util.Objects.isNull;
 public class RecomendacaoService {
 
     private final VercelGateway vercelGateway;
+    private final CompraMapper compraMapper;
 
     private static final Logger log = LoggerFactory.getLogger(RecomendacaoService.class);
 
-    public RecomendacaoService(VercelGateway vercelGateway) {
+    public RecomendacaoService(VercelGateway vercelGateway, CompraMapper compraMapper) {
         this.vercelGateway = vercelGateway;
+        this.compraMapper = compraMapper;
     }
 
     public List<RecomendacaoClienteResponse> recomendarVinhoParaCliente() {
@@ -57,7 +55,7 @@ public class RecomendacaoService {
                 .flatMap(cliente -> Optional.ofNullable(cliente.compras())
                         .orElseGet((List::of))
                         .stream()
-                        .map(item -> buildCompraResponse(cliente, item, produtosMap)))
+                        .map(item -> compraMapper.buildCompraResponse(cliente, item, produtosMap)))
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(CompraResponse::clienteCpf));
 
@@ -101,42 +99,5 @@ public class RecomendacaoService {
         log.info("RecomendacaoService#recomendarVinhoParaCliente - Finalizado recomendacao");
 
         return recomendacaoParaClientes;
-    }
-
-    private static CompraResponse buildCompraResponse(Cliente cliente, CompraItem item, Map<Integer, Produto> produtosMap) {
-        log.info("RecomendacaoService#buildCompraResponse - Iniciado build compra response");
-
-        Integer codigoProduto;
-        try {
-            codigoProduto = Integer.parseInt(item.codigo());
-        } catch (NumberFormatException e) {
-            log.warn("Código de produto inválido '{}' para cliente {}", item.codigo(), cliente.cpf());
-            return null;
-        }
-        var produto = produtosMap.get(codigoProduto);
-        if (isNull(produto)) {
-            log.warn("Produto código {} não encontrado; cliente {}", codigoProduto, cliente.cpf());
-            return null;
-        }
-
-        var preco = produto.preco();
-        var quantidade = item.quantidade();
-        var total = preco.multiply(BigDecimal.valueOf(quantidade));
-
-        var compraResponse = new CompraResponse(
-                cliente.nome(),
-                cliente.cpf(),
-                produto.codigo(),
-                produto.tipoVinho(),
-                produto.safra(),
-                produto.anoCompra(),
-                preco,
-                quantidade,
-                total
-        );
-
-        log.info("RecomendacaoService#buildCompraResponse - Finalizado build compra response");
-
-        return compraResponse;
     }
 }
