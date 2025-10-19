@@ -13,15 +13,51 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,caches # show cache statistics
+        include: health,info,metrics,caches,circuitbreakers,circuitbreakerevents
       base-path: /actuator
   endpoint:
     health:
       probes:
         enabled: true       # liveness/readiness
-      show-details: never   # don't show details by default
+      show-details: always  # show circuit breaker details
+  health:
+    circuitbreakers:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        resilience4j.circuitbreaker.calls: true
 
 external:
   base:
     url:
       vercel: https://rgr3viiqdl8sikgv.public.blob.vercel-storage.com
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        # Registra chamadas baseado em contagem (count-based)
+        sliding-window-type: COUNT_BASED
+        # Número de chamadas no sliding window
+        sliding-window-size: 10
+        # Mínimo de chamadas antes de calcular taxa de erro
+        minimum-number-of-calls: 5
+        # Taxa de falha permitida (50%)
+        failure-rate-threshold: 50
+        # Taxa de chamadas lentas permitida (50%)
+        slow-call-rate-threshold: 50
+        # Duração considerada como chamada lenta
+        slow-call-duration-threshold: 5s
+        # Tempo que o circuit breaker fica aberto antes de ir para half-open
+        wait-duration-in-open-state: 30s
+        # Número de chamadas permitidas no estado half-open
+        permitted-number-of-calls-in-half-open-state: 3
+        # Transição automática de open para half-open
+        automatic-transition-from-open-to-half-open-enabled: true
+        # Registra eventos do circuit breaker
+        register-health-indicator: true
+    instances:
+      vercelApi:
+        base-config: default
