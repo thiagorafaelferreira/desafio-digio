@@ -3,6 +3,7 @@ package com.bancodigio.purchase.analytics.api.service;
 import com.bancodigio.purchase.analytics.api.dto.Cliente;
 import com.bancodigio.purchase.analytics.api.dto.CompraItem;
 import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
+import com.bancodigio.purchase.analytics.api.dto.PageResponse;
 import com.bancodigio.purchase.analytics.api.dto.Produto;
 import com.bancodigio.purchase.analytics.api.exception.CompraNotFoundException;
 import com.bancodigio.purchase.analytics.api.gateway.VercelGateway;
@@ -100,7 +101,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientes);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 10);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         assertThat(resultado).hasSize(3);
@@ -130,7 +132,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientes);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         CompraResponse compra1 = resultado.stream()
@@ -151,7 +154,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientes);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         CompraResponse compra = resultado.get(0);
@@ -252,7 +256,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientesComCodigoInvalido);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         assertThat(resultado).hasSize(1);
@@ -274,7 +279,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientesComProdutoInexistente);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         assertThat(resultado).hasSize(1);
@@ -294,7 +300,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientesSemCompras);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         assertThat(resultado).isEmpty();
@@ -308,7 +315,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(List.of());
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         assertThat(resultado).isEmpty();
@@ -322,7 +330,8 @@ class CompraServiceTest {
         when(vercelGateway.listarClientes()).thenReturn(clientes);
 
         // Act
-        List<CompraResponse> resultado = compraService.listarComprasOrdenadasPorValorCrescente();
+        PageResponse<CompraResponse> pageResponse = compraService.listarComprasOrdenadasPorValorCrescente(0, 100);
+        List<CompraResponse> resultado = pageResponse.content();
 
         // Assert
         CompraResponse compra = resultado.stream()

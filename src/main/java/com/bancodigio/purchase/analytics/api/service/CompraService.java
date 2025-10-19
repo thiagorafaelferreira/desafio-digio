@@ -2,6 +2,7 @@ package com.bancodigio.purchase.analytics.api.service;
 
 import com.bancodigio.purchase.analytics.api.dto.Cliente;
 import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
+import com.bancodigio.purchase.analytics.api.dto.PageResponse;
 import com.bancodigio.purchase.analytics.api.dto.Produto;
 import com.bancodigio.purchase.analytics.api.exception.CompraNotFoundException;
 import com.bancodigio.purchase.analytics.api.gateway.VercelGateway;
@@ -36,8 +37,15 @@ public class CompraService {
         this.compraMapper = compraMapper;
     }
 
-    public List<CompraResponse> listarComprasOrdenadasPorValorCrescente() {
-        log.info("CompraService#listarComprasOrdenadasPorValorCrescente - Iniciado processamento da lista de compras");
+    /**
+     * Lista todas as compras ordenadas por valor total de forma paginada
+     *
+     * @param page Número da página (começando em 0)
+     * @param size Tamanho da página
+     * @return Resposta paginada com as compras ordenadas por valor crescente
+     */
+    public PageResponse<CompraResponse> listarComprasOrdenadasPorValorCrescente(int page, int size) {
+        log.info("CompraService#listarComprasOrdenadasPorValorCrescente - Iniciado processamento da lista de compras (page={}, size={})", page, size);
         var produtos = vercelGateway.listarProdutos();
 
         Map<Integer, Produto> produtosMap = produtos.stream()
@@ -59,9 +67,9 @@ public class CompraService {
                         .sorted(Comparator.comparing(CompraResponse::valorTotal))
                         .toList();
 
-        log.info("CompraService#listarComprasOrdenadasPorValorCrescente - Finalizado processamento da lista de compras");
+        log.info("CompraService#listarComprasOrdenadasPorValorCrescente - Finalizado processamento. Total de compras: {}", comprasProcessadas.size());
 
-        return comprasProcessadas;
+        return PageResponse.of(comprasProcessadas, page, size);
     }
 
     public CompraResponse maiorCompraDoAno(Integer ano) {
