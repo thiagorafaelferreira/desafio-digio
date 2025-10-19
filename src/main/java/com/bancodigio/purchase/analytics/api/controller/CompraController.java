@@ -1,6 +1,7 @@
 package com.bancodigio.purchase.analytics.api.controller;
 
 import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
+import com.bancodigio.purchase.analytics.api.dto.PageResponse;
 import com.bancodigio.purchase.analytics.api.service.CompraService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -36,16 +38,28 @@ public class CompraController {
 
     @GetMapping("/compras")
     @Operation(
-            summary = "Lista todas as compras",
-            description = "Retorna todas as compras ordenadas por valor total em ordem crescente"
+            summary = "Lista todas as compras com paginação",
+            description = "Retorna as compras ordenadas por valor total em ordem crescente de forma paginada"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de compras retornada com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Página de compras retornada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de paginação inválidos"),
             @ApiResponse(responseCode = "503", description = "Serviço externo indisponível"),
             @ApiResponse(responseCode = "504", description = "Timeout ao acessar serviço externo")
     })
-    public List<CompraResponse> listaCompras() {
-        return compraService.listarComprasOrdenadasPorValorCrescente();
+    public PageResponse<CompraResponse> listaCompras(
+            @Parameter(description = "Número da página (começando em 0)", example = "0")
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Página deve ser maior ou igual a 0")
+            int page,
+
+            @Parameter(description = "Tamanho da página (quantidade de itens)", example = "20")
+            @RequestParam(defaultValue = "20")
+            @Min(value = 1, message = "Tamanho da página deve ser maior que 0")
+            @Max(value = 100, message = "Tamanho máximo da página é 100")
+            int size
+    ) {
+        return compraService.listarComprasOrdenadasPorValorCrescente(page, size);
     }
 
     @GetMapping("/maior-compra/{ano}")

@@ -1,6 +1,7 @@
 package com.bancodigio.purchase.analytics.api.controller;
 
 import com.bancodigio.purchase.analytics.api.dto.CompraResponse;
+import com.bancodigio.purchase.analytics.api.dto.PageResponse;
 import com.bancodigio.purchase.analytics.api.exception.CompraNotFoundException;
 import com.bancodigio.purchase.analytics.api.service.CompraService;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,26 +49,33 @@ class CompraControllerIntegrationTest {
                         new BigDecimal("120.00"), 10, new BigDecimal("1200.00"))
         );
 
-        when(compraService.listarComprasOrdenadasPorValorCrescente()).thenReturn(compras);
+        PageResponse<CompraResponse> pageResponse = PageResponse.of(compras, 0, 20);
+        when(compraService.listarComprasOrdenadasPorValorCrescente(anyInt(), anyInt())).thenReturn(pageResponse);
 
         // Act & Assert
         mockMvc.perform(get("/v1/compras")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].clienteNome", is("João Silva")))
-                .andExpect(jsonPath("$[0].clienteCpf", is("12345678900")))
-                .andExpect(jsonPath("$[0].produtoCodigo", is(1001)))
-                .andExpect(jsonPath("$[0].produtoTipo", is("Tinto")))
-                .andExpect(jsonPath("$[0].produtoSafra", is("2020")))
-                .andExpect(jsonPath("$[0].produtoAnoCompra", is(2023)))
-                .andExpect(jsonPath("$[0].precoUnitario", is(150.00)))
-                .andExpect(jsonPath("$[0].quantidade", is(2)))
-                .andExpect(jsonPath("$[0].valorTotal", is(300.00)))
-                .andExpect(jsonPath("$[1].valorTotal", is(500.00)))
-                .andExpect(jsonPath("$[2].valorTotal", is(1200.00)));
+                .andExpect(jsonPath("$.content", hasSize(3)))
+                .andExpect(jsonPath("$.page", is(0)))
+                .andExpect(jsonPath("$.size", is(20)))
+                .andExpect(jsonPath("$.totalElements", is(3)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.first", is(true)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].clienteNome", is("João Silva")))
+                .andExpect(jsonPath("$.content[0].clienteCpf", is("12345678900")))
+                .andExpect(jsonPath("$.content[0].produtoCodigo", is(1001)))
+                .andExpect(jsonPath("$.content[0].produtoTipo", is("Tinto")))
+                .andExpect(jsonPath("$.content[0].produtoSafra", is("2020")))
+                .andExpect(jsonPath("$.content[0].produtoAnoCompra", is(2023)))
+                .andExpect(jsonPath("$.content[0].precoUnitario", is(150.00)))
+                .andExpect(jsonPath("$.content[0].quantidade", is(2)))
+                .andExpect(jsonPath("$.content[0].valorTotal", is(300.00)))
+                .andExpect(jsonPath("$.content[1].valorTotal", is(500.00)))
+                .andExpect(jsonPath("$.content[2].valorTotal", is(1200.00)));
 
-        verify(compraService).listarComprasOrdenadasPorValorCrescente();
+        verify(compraService).listarComprasOrdenadasPorValorCrescente(0, 20);
     }
 
     @Test
@@ -74,15 +83,18 @@ class CompraControllerIntegrationTest {
     @DisplayName("GET /v1/compras - Deve retornar lista vazia quando não houver compras")
     void deveRetornarListaVaziaQuandoNaoHouverCompras() throws Exception {
         // Arrange
-        when(compraService.listarComprasOrdenadasPorValorCrescente()).thenReturn(List.of());
+        PageResponse<CompraResponse> pageResponse = PageResponse.of(List.of(), 0, 20);
+        when(compraService.listarComprasOrdenadasPorValorCrescente(anyInt(), anyInt())).thenReturn(pageResponse);
 
         // Act & Assert
         mockMvc.perform(get("/v1/compras")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)))
+                .andExpect(jsonPath("$.totalElements", is(0)))
+                .andExpect(jsonPath("$.totalPages", is(0)));
 
-        verify(compraService).listarComprasOrdenadasPorValorCrescente();
+        verify(compraService).listarComprasOrdenadasPorValorCrescente(0, 20);
     }
 
     @Test
@@ -181,30 +193,31 @@ class CompraControllerIntegrationTest {
                         new BigDecimal("150.00"), 2, new BigDecimal("300.00"))
         );
 
-        when(compraService.listarComprasOrdenadasPorValorCrescente()).thenReturn(compras);
+        PageResponse<CompraResponse> pageResponse = PageResponse.of(compras, 0, 20);
+        when(compraService.listarComprasOrdenadasPorValorCrescente(anyInt(), anyInt())).thenReturn(pageResponse);
 
         // Act & Assert
         mockMvc.perform(get("/v1/compras")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].clienteNome").exists())
-                .andExpect(jsonPath("$[0].clienteCpf").exists())
-                .andExpect(jsonPath("$[0].produtoCodigo").exists())
-                .andExpect(jsonPath("$[0].produtoTipo").exists())
-                .andExpect(jsonPath("$[0].produtoSafra").exists())
-                .andExpect(jsonPath("$[0].produtoAnoCompra").exists())
-                .andExpect(jsonPath("$[0].precoUnitario").exists())
-                .andExpect(jsonPath("$[0].quantidade").exists())
-                .andExpect(jsonPath("$[0].valorTotal").exists())
-                .andExpect(jsonPath("$[0].clienteNome").isString())
-                .andExpect(jsonPath("$[0].clienteCpf").isString())
-                .andExpect(jsonPath("$[0].produtoCodigo").isNumber())
-                .andExpect(jsonPath("$[0].produtoTipo").isString())
-                .andExpect(jsonPath("$[0].produtoSafra").isString())
-                .andExpect(jsonPath("$[0].produtoAnoCompra").isNumber())
-                .andExpect(jsonPath("$[0].precoUnitario").isNumber())
-                .andExpect(jsonPath("$[0].quantidade").isNumber())
-                .andExpect(jsonPath("$[0].valorTotal").isNumber());
+                .andExpect(jsonPath("$.content[0].clienteNome").exists())
+                .andExpect(jsonPath("$.content[0].clienteCpf").exists())
+                .andExpect(jsonPath("$.content[0].produtoCodigo").exists())
+                .andExpect(jsonPath("$.content[0].produtoTipo").exists())
+                .andExpect(jsonPath("$.content[0].produtoSafra").exists())
+                .andExpect(jsonPath("$.content[0].produtoAnoCompra").exists())
+                .andExpect(jsonPath("$.content[0].precoUnitario").exists())
+                .andExpect(jsonPath("$.content[0].quantidade").exists())
+                .andExpect(jsonPath("$.content[0].valorTotal").exists())
+                .andExpect(jsonPath("$.content[0].clienteNome").isString())
+                .andExpect(jsonPath("$.content[0].clienteCpf").isString())
+                .andExpect(jsonPath("$.content[0].produtoCodigo").isNumber())
+                .andExpect(jsonPath("$.content[0].produtoTipo").isString())
+                .andExpect(jsonPath("$.content[0].produtoSafra").isString())
+                .andExpect(jsonPath("$.content[0].produtoAnoCompra").isNumber())
+                .andExpect(jsonPath("$.content[0].precoUnitario").isNumber())
+                .andExpect(jsonPath("$.content[0].quantidade").isNumber())
+                .andExpect(jsonPath("$.content[0].valorTotal").isNumber());
     }
 
     @Test
