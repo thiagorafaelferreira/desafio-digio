@@ -8,6 +8,7 @@ import com.bancodigio.purchase.analytics.api.exception.ExternalNotFoundOrBadRequ
 import com.bancodigio.purchase.analytics.api.exception.ExternalServerException;
 import com.bancodigio.purchase.analytics.api.exception.ExternalTimeoutException;
 import com.bancodigio.purchase.analytics.api.exception.ExternalUnavailableException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,14 +35,16 @@ public class VercelGateway {
     }
 
     /**
-     * Lista produtos da API Vercel com cache de 15 minutos
+     * Lista produtos da API Vercel com cache de 15 minutos e circuit breaker
      *
      * Cache Key: "produtos" (único para todos)
      * TTL: 15 minutos (configurado em CacheConfig)
+     * Circuit Breaker: vercelApi (configurado em application.yml)
      *
      * @return Lista de produtos
      */
     @Cacheable(value = "produtos")
+    @CircuitBreaker(name = "vercelApi", fallbackMethod = "listarProdutosFallback")
     public List<Produto> listarProdutos() {
         log.info("VercelGateway#listarProdutos - Buscando produtos da API externa (CACHE MISS)");
         try {
@@ -63,14 +67,16 @@ public class VercelGateway {
     }
 
     /**
-     * Lista clientes da API Vercel com cache de 15 minutos
+     * Lista clientes da API Vercel com cache de 15 minutos e circuit breaker
      *
      * Cache Key: "clientes" (único para todos)
      * TTL: 15 minutos (configurado em CacheConfig)
+     * Circuit Breaker: vercelApi (configurado em application.yml)
      *
      * @return Lista de clientes
      */
     @Cacheable(value = "clientes")
+    @CircuitBreaker(name = "vercelApi", fallbackMethod = "listarClientesFallback")
     public List<Cliente> listarClientes() {
         log.info("VercelGateway#listarClientes - Buscando clientes da API externa (CACHE MISS)");
         try {
@@ -90,5 +96,31 @@ public class VercelGateway {
             log.error("VercelGateway#listarClientes - Timeout", e);
             throw new ExternalTimeoutException("VercelGateway#listarClientes - Timeout ao chamar serviço externo.", e);
         }
+    }
+
+    /**
+     * Método fallback para listarProdutos quando o circuit breaker está aberto
+     * Retorna uma lista vazia para evitar propagação de erros
+     *
+     * @param throwable A exceção que causou a ativação do fallback
+     * @return Lista vazia de produtos
+     */
+    private List<Produto> listarProdutosFallback(Throwable throwable) {
+        log.warn("VercelGateway#listarProdutosFallback - Circuit breaker ABERTO ou erro na chamada. Retornando lista vazia. Causa: {}",
+                throwable.getMessage());
+        return Collections.emptyList();
+    }
+
+    /**
+     * Método fallback para listarClientes quando o circuit breaker está aberto
+     * Retorna uma lista vazia para evitar propagação de erros
+     *
+     * @param throwable A exceção que causou a ativação do fallback
+     * @return Lista vazia de clientes
+     */
+    private List<Cliente> listarClientesFallback(Throwable throwable) {
+        log.warn("VercelGateway#listarClientesFallback - Circuit breaker ABERTO ou erro na chamada. Retornando lista vazia. Causa: {}",
+                throwable.getMessage());
+        return Collections.emptyList();
     }
 }
